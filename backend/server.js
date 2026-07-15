@@ -1,5 +1,8 @@
 require("dotenv").config();
 
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -28,11 +31,11 @@ app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/payment", require("./routes/paymentRoutes"));
 
 app.get("/", (req, res) => {
-  res.json({ message: "Women’s Styles API running" });
+  res.json({ message: "Women's Styles API running" });
 });
 
 app.get("/api", (req, res) => {
-  res.json({ message: "Women’s Styles API running" });
+  res.json({ message: "Women's Styles API running" });
 });
 
 const PORT = process.env.PORT || 5000;

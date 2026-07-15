@@ -1,9 +1,17 @@
-const r=require('express').Router();
-const c=require('../controllers/orderController');
-const {protect}=require('../middleware/auth');
+const r = require('express').Router();
+const c = require('../controllers/orderController');
+const { protect } = require('../middleware/auth');
 
-r.post('/',protect,c.create);
-r.get('/my-orders',protect,c.myOrders);
-r.put('/:id/cancel',protect,c.cancelOrder);
+// Place a new order (Cash on Delivery / Scan & Pay)
+r.post('/', protect, c.createOrder);
 
-module.exports=r;
+// Logged-in user's own orders
+r.get('/my-orders', protect, c.myOrders);
+
+// Admin: view all orders (to manually verify Scan & Pay transactions)
+r.get('/admin', protect, c.getAllOrdersForAdmin);
+
+// Admin: mark a payment as verified after checking bank/UPI statement
+r.patch('/:id/verify', protect, c.verifyPayment);
+
+module.exports = r;

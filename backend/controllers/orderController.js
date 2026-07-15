@@ -1,83 +1,97 @@
-const Order=require('../models/Order');
-const Product=require('../models/Product');
-const User=require('../models/User');
+const Order = require('../models/Order');
+const Product = require('../models/Product');
+const User = require('../models/User');
 
-exports.create=async(req,res)=>{
-  try{
-    const order=await Order.create({...req.body,user:req.user._id});
-    for(const item of req.body.items||[])
-      await Product.findByIdAndUpdate(item.product,{$inc:{stock:-item.quantity}});
+const PAYMENT_METHODS = {
+  "cash on delivery": "Cash on Delivery",
+  "scan & pay": "Scan & Pay",
+};
+
+const ALLOWED_PAYMENT_METHODS = Object.values(PAYMENT_METHODS);
+
+// POST /api/orders
+exports.createOrder = async (req, res) => {
+  try {
+    const {
+      items,
+      address,
+      amount,
+      paymentMethod,
+      paymentStatus,
+      transactionId,
+    } = req.body;
+
+    if (!items || !items.length) {
+      return res.status(400).json({ message: "No items in order" });
+    }
+
+    const normalizedMethodKey = String(paymentMethod || "").trim().toLowerCase();
+    const normalizedPaymentMethod = PAYMENT_METHODS[normalizedMethodKey] || String(paymentMethod || "").trim();
+
+    if (!ALLOWED_PAYMENT_METHODS.includes(normalizedPaymentMethod)) {
+      return res.status(400).json({
+        message: `Invalid payment method: ${paymentMethod}. Allowed values: ${ALLOWED_PAYMENT_METHODS.join(", ")}`,
+      });
+    }
+
+    if (normalizedPaymentMethod === "Scan & Pay" && !transactionId) {
+      return res.status(400).json({ message: "Transaction ID is required for Scan & Pay" });
+    }
+
+    const order = await Order.create({
+      user: req.user._id,
+      items,
+      address,
+      amount,
+      paymentMethod: normalizedPaymentMethod,
+      paymentStatus,
+      transactionId: transactionId || null,
+    });
+
     res.status(201).json(order);
-  }catch(e){res.status(500).json({message:e.message})}
+  } catch (err) {
+    console.error("Create order error:", err);
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ message: err.message, errors: err.errors });
+    }
+    res.status(500).json({ message: "Failed to place order" });
+  }
 };
 
-exports.myOrders=async(req,res)=>{
-  try{
-    const orders=await Order.find({user:req.user._id}).lean().sort('-createdAt');
-    // convert _id and user ObjectIds to strings for clean JSON
-    const result=orders.map(o=>({
-      ...o,
-      _id:o._id.toString(),
-      user:o.user?.toString(),
-      items:(o.items||[]).map(item=>({
-        ...item,
-        _id:item._id?.toString(),
-        product:item.product?.toString(),
-      })),
-    }));
-    res.json(result);
-  }catch(e){res.status(500).json({message:e.message})}
+// GET /api/orders/my-orders  (logged-in user's own orders)
+exports.myOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    console.error("myOrders error:", err);
+    res.status(500).json({ message: "Failed to fetch orders" });
+  }
 };
 
-exports.cancelOrder=async(req,res)=>{
-  try{
-    if(!req.user) return res.status(401).json({message:'Not authorized. Please login again.'});
-    const mongoose=require('mongoose');
-    if(!mongoose.Types.ObjectId.isValid(req.params.id))
-      return res.status(404).json({message:'Order not found'});
-    const order=await Order.findById(req.params.id);
-    if(!order) return res.status(404).json({message:'Order not found'});
-    if(order.user.toString()!==req.user._id.toString())
-      return res.status(403).json({message:'Not authorized to cancel this order'});
-    const nonCancellable=['Shipped','Out for Delivery','Delivered','Cancelled'];
-    if(nonCancellable.includes(order.orderStatus))
-      return res.status(400).json({message:'This order cannot be cancelled at this stage'});
-    order.orderStatus='Cancelled';
-    order.deliveryStatus='Cancelled';
-    order.cancelReason=req.body.reason||'Cancelled by user';
-    order.cancelledByAdmin=false;
-    await order.save();
+// GET /api/orders/admin  (admin: view all orders, to manually verify Scan & Pay transactions)
+exports.getAllOrdersForAdmin = async (req, res) => {
+  try {
+    const orders = await Order.find().populate("user", "name email phone").sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    console.error("getAllOrdersForAdmin error:", err);
+    res.status(500).json({ message: "Failed to fetch orders" });
+  }
+};
+
+// PATCH /api/orders/:id/verify  (admin marks payment as verified after checking bank/UPI statement)
+exports.verifyPayment = async (req, res) => {
+  try {
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { paymentStatus: "Verified" },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);
-  }catch(e){
-    console.error('cancelOrder error:',e.message);
-    res.status(500).json({message:e.message});
+  } catch (err) {
+    console.error("verifyPayment error:", err);
+    res.status(500).json({ message: "Failed to verify payment" });
   }
-};
-
-exports.adminOrders=async(req,res)=>
-  res.json(await Order.find().populate('user','name email phone').sort('-createdAt'));
-
-exports.updateStatus=async(req,res)=>{
-  const status=req.body.orderStatus||req.body.status;
-  const update={orderStatus:status,deliveryStatus:status};
-  if(status==='Cancelled'){
-    update.cancelReason=req.body.cancelReason||'Unfortunately out of stock. Cancelled by admin.';
-    update.cancelledByAdmin=true;
-  }
-  res.json(await Order.findByIdAndUpdate(req.params.id,update,{new:true}));
-};
-
-exports.summary=async(req,res)=>{
-  const start=new Date(); start.setHours(0,0,0,0);
-  const orders=await Order.find();
-  const today=orders.filter(o=>o.createdAt>=start);
-  res.json({
-    todayTotalOrders:today.length,
-    totalIncome:orders.reduce((s,o)=>s+(o.amount||0),0),
-    totalProducts:await Product.countDocuments(),
-    totalUsers:await User.countDocuments(),
-    pendingOrders:orders.filter(o=>!['Delivered','Cancelled'].includes(o.orderStatus)).length,
-    deliveredOrders:orders.filter(o=>o.orderStatus==='Delivered').length,
-    cancelledOrders:orders.filter(o=>o.orderStatus==='Cancelled').length,
-  });
 };

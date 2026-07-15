@@ -1,2 +1,20 @@
-const r=require('express').Router(); const c=require('../controllers/authController'); const o=require('../controllers/orderController'); const {adminProtect}=require('../middleware/auth'); const User=require('../models/User');
-r.post('/login',c.adminLogin); r.get('/orders',adminProtect,o.adminOrders); r.put('/orders/:id/status',adminProtect,o.updateStatus); r.get('/summary',adminProtect,o.summary); r.get('/users',adminProtect,async(req,res)=>res.json(await User.find().select('-password').sort('-createdAt'))); module.exports=r;
+// const r=require('express').Router(); const c=require('../controllers/authController'); const o=require('../controllers/orderController'); const {adminProtect}=require('../middleware/auth'); const User=require('../models/User');
+// r.post('/login',c.adminLogin); r.get('/orders',adminProtect,o.adminOrders); r.put('/orders/:id/status',adminProtect,o.updateStatus); r.get('/summary',adminProtect,o.summary); r.get('/users',adminProtect,async(req,res)=>res.json(await User.find().select('-password').sort('-createdAt'))); module.exports=r;
+
+const r = require("express").Router();
+const c = require("../controllers/authController");
+const o = require("../controllers/orderController");
+const { adminProtect } = require("../middleware/auth");
+const User = require("../models/User");
+
+r.post("/login", c.adminLogin);
+
+r.get("/orders", adminProtect, o.getAllOrdersForAdmin);
+
+r.patch("/orders/:id/verify", adminProtect, o.verifyPayment);
+
+r.get("/users", adminProtect, async (req, res) => {
+  res.json(await User.find().select("-password").sort("-createdAt"));
+});
+
+module.exports = r;
