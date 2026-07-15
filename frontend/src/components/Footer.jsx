@@ -44,7 +44,7 @@ export default function Footer() {
             </p>
             <p className="mt-1 text-sm text-slate-300 pl-6">8098954035</p>
             <a
-              href="https://instagram.com/womensstyles"
+              href="https://www.instagram.com/women_style_collection?utm_source=qr&igsh=c214dXllZ3JheHVt"
               target="_blank"
               rel="noreferrer"
               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-2.5 text-sm font-black text-white transition hover:opacity-90"
