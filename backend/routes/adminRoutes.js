@@ -11,7 +11,11 @@ r.post("/login", c.adminLogin);
 
 r.get("/orders", adminProtect, o.getAllOrdersForAdmin);
 
+r.get("/summary", adminProtect, o.summary);
+
 r.patch("/orders/:id/verify", adminProtect, o.verifyPayment);
+
+r.delete("/orders/:id", adminProtect, o.deleteOrder);
 
 r.get("/users", adminProtect, async (req, res) => {
   res.json(await User.find().select("-password").sort("-createdAt"));

@@ -1,1 +1,4 @@
-const r=require('express').Router(); const c=require('../controllers/favouriteController'); const {protect}=require('../middleware/auth'); r.use(protect); r.route('/').post(c.add).get(c.list); r.delete('/:id',c.remove); module.exports=r;
+const r=require('express').Router();
+ const c=require('../controllers/favouriteController'); 
+ const {protect}=require('../middleware/auth'); 
+ r.use(protect); r.route('/').post(c.add).get(c.list); r.delete('/:id',c.remove); module.exports=r;

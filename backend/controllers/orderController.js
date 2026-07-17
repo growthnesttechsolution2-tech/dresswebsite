@@ -95,3 +95,37 @@ exports.verifyPayment = async (req, res) => {
     res.status(500).json({ message: "Failed to verify payment" });
   }
 };
+// GET /api/admin/summary  (admin dashboard stats)
+exports.summary = async (req, res) => {
+  try {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const orders = await Order.find();
+    const today = orders.filter((o) => o.createdAt >= start);
+
+    res.json({
+      todayTotalOrders: today.length,
+      totalIncome: orders.reduce((s, o) => s + (o.amount || 0), 0),
+      totalProducts: await Product.countDocuments(),
+      totalUsers: await User.countDocuments(),
+      pendingOrders: orders.filter((o) => !["Delivered", "Cancelled"].includes(o.orderStatus)).length,
+      deliveredOrders: orders.filter((o) => o.orderStatus === "Delivered").length,
+      cancelledOrders: orders.filter((o) => o.orderStatus === "Cancelled").length,
+    });
+  } catch (err) {
+    console.error("summary error:", err);
+    res.status(500).json({ message: "Failed to fetch summary" });
+  }
+};
+// DELETE /api/admin/orders/:id  (admin: delete a test/dummy order)
+exports.deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    res.json({ message: "Order deleted successfully" });
+  } catch (err) {
+    console.error("deleteOrder error:", err);
+    res.status(500).json({ message: "Failed to delete order" });
+  }
+};

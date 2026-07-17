@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   ShoppingBag, X, User, Phone, MapPin, Package,
-  CreditCard, XCircle, Search, ChevronDown, RefreshCw, Sparkles,
+  CreditCard, XCircle, Search, ChevronDown, RefreshCw, Sparkles, Trash2,
 } from "lucide-react";
 import api from "../../api/api";
 
@@ -41,6 +41,7 @@ function OrderDetailModal({ order, onClose, onUpdate }) {
   const [cancelReason, setCancelReason] = useState(ADMIN_CANCEL_REASONS[0]);
   const [customReason, setCustomReason] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const save = async () => {
     if (status === order.orderStatus) return onClose();
@@ -58,9 +59,23 @@ function OrderDetailModal({ order, onClose, onUpdate }) {
     } finally { setSaving(false); }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm("Idha order-a delete pannalama? Idha undo panna mudiyathu.")) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/admin/orders/${order._id}`);
+      onUpdate();
+      onClose();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete order");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const img = (item) => {
     if (!item.image) return null;
-    return item.image.startsWith("http") ? item.image : `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/${item.image}`;
+    return imgUrl(item.image);
   };
 
   const glassPanel = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "1.25rem" };
@@ -236,6 +251,17 @@ function OrderDetailModal({ order, onClose, onUpdate }) {
               )}
             </div>
           )}
+
+          {/* Delete button */}
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-black transition disabled:opacity-60"
+            style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }}
+          >
+            <Trash2 className="h-4 w-4" />
+            {deleting ? "Deleting…" : "Delete Order"}
+          </button>
         </div>
       </div>
     </div>
