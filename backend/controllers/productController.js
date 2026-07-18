@@ -24,6 +24,8 @@ const normalize = (body) => {
           .split(",")
           .map((item) => item.trim())
           .filter(Boolean),
+    shippingCharge: body.shippingCharge ? Number(body.shippingCharge) : 0,
+    freeShipping: body.freeShipping === "true" || body.freeShipping === true,
   };
 };
 

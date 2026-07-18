@@ -42,6 +42,7 @@ export default function AdminProducts() {
   useEffect(() => { setFilterSub(""); }, [filterCat]);
 
   const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const handleCheckbox = (e) => setForm((p) => ({ ...p, freeShipping: e.target.checked }));
   const handleFiles = (e) => {
     setFiles(e.target.files);
     setPreview(Array.from(e.target.files).map((f) => URL.createObjectURL(f)));
@@ -59,7 +60,7 @@ export default function AdminProducts() {
   };
 
   const editProduct = (p) => {
-    setForm({ ...p, sizes: p.sizes?.join(", "), colors: p.colors?.join(", ") });
+    setForm({ ...p, sizes: p.sizes?.join(", "), colors: p.colors?.join(", "), freeShipping: !!p.freeShipping });
     setPreview(p.images || []);
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -87,7 +88,6 @@ export default function AdminProducts() {
   return (
     <div className="space-y-5 pb-24 lg:pb-8">
 
-      {/* Header */}
       <div className="flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between" style={{ background: "linear-gradient(135deg,rgba(59,130,246,0.2),rgba(6,182,212,0.1))", border: "1px solid rgba(59,130,246,0.25)" }}>
         <div>
           <div className="mb-1 inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.25)" }}>
@@ -106,7 +106,6 @@ export default function AdminProducts() {
         </button>
       </div>
 
-      {/* Add / Edit Form */}
       {showForm && (
         <div className="rounded-3xl p-6" style={glassSection}>
           <div className="mb-5 flex items-center justify-between">
@@ -128,10 +127,15 @@ export default function AdminProducts() {
                 <option style={{ background: "#1a1040" }} value="Active">Active</option>
                 <option style={{ background: "#1a1040" }} value="Inactive">Inactive</option>
               </GlassInput>
+              <GlassInput name="shippingCharge" value={form.shippingCharge || ""} onChange={handleChange} placeholder="Shipping Charge (₹)" type="number" />
               <div>
                 <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-blue-300">Images</label>
                 <input type="file" multiple onChange={handleFiles} className="w-full text-xs text-white/50 file:mr-3 file:rounded-xl file:border-0 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "0.875rem", padding: "0.5rem" }} />
               </div>
+              <label className="flex items-center gap-2 rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <input type="checkbox" checked={form.freeShipping || false} onChange={handleCheckbox} className="h-4 w-4" />
+                <span className="text-sm font-bold text-white">Free Shipping (no charge)</span>
+              </label>
             </div>
             <GlassInput as="textarea" name="about" value={form.about || ""} onChange={handleChange} placeholder="About product" style={{ ...inputStyle, resize: "none" }} rows={2} />
             <GlassInput as="textarea" name="description" value={form.description || ""} onChange={handleChange} placeholder="Description" style={{ ...inputStyle, resize: "none" }} rows={2} />
@@ -151,7 +155,6 @@ export default function AdminProducts() {
         </div>
       )}
 
-      {/* Search + Filter */}
       <div className="rounded-3xl p-4" style={glassSection}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
@@ -195,7 +198,6 @@ export default function AdminProducts() {
         )}
       </div>
 
-      {/* Product Grid */}
       {filtered.length ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
           {filtered.map((product) => (
