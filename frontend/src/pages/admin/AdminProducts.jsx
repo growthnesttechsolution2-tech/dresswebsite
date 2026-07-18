@@ -51,7 +51,10 @@ export default function AdminProducts() {
   const saveProduct = async (e) => {
     e.preventDefault();
     const fd = new FormData();
-    Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+    Object.entries(form).forEach(([k, v]) => {
+      if (k === "images") return;
+      fd.append(k, v);
+    });
     Array.from(files).forEach((f) => fd.append("images", f));
     if (form._id) await api.put(`/products/${form._id}`, fd);
     else await api.post("/products", fd);
