@@ -1,7 +1,7 @@
 const Product = require("../models/Product");
 
 const normalize = (body) => {
-  return {
+  const result = {
     ...body,
     price: body.price ? Number(body.price) : undefined,
     discountPrice: body.discountPrice ? Number(body.discountPrice) : undefined,
@@ -18,15 +18,23 @@ const normalize = (body) => {
           .split(",")
           .map((item) => item.trim())
           .filter(Boolean),
-    images: Array.isArray(body.images)
+    shippingCharge: body.shippingCharge ? Number(body.shippingCharge) : 0,
+    freeShipping: body.freeShipping === "true" || body.freeShipping === true,
+  };
+
+  // Only touch `images` if the caller actually sent something for it.
+  // This prevents PUT requests (edit without new file uploads) from
+  // wiping out the existing images array.
+  if (body.images !== undefined) {
+    result.images = Array.isArray(body.images)
       ? body.images
       : String(body.images || "")
           .split(",")
           .map((item) => item.trim())
-          .filter(Boolean),
-    shippingCharge: body.shippingCharge ? Number(body.shippingCharge) : 0,
-    freeShipping: body.freeShipping === "true" || body.freeShipping === true,
-  };
+          .filter(Boolean);
+  }
+
+  return result;
 };
 
 exports.createProduct = async (req, res) => {
