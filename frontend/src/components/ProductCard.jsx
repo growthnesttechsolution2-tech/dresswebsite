@@ -9,9 +9,25 @@ export default function ProductCard({ p }) {
   const mrp = Number(p.price || 0);
   const discount = p.discountPrice && mrp ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
-  const addToCart = async (e) => { e.preventDefault(); await api.post("/cart", { product: p._id, quantity: 1 }); alert("Added to cart"); };
-  const addToFavourite = async (e) => { e.preventDefault(); await api.post("/favourites", { product: p._id }); alert("Added to favourite"); };
-  const buyNow = (e) => { e.preventDefault(); navigate("/checkout", { state: { buyNow: p } }); };
+  const addToCart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await api.post("/cart", { product: p._id, quantity: 1 });
+    alert("Added to cart");
+  };
+
+  const addToFavourite = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await api.post("/favourites", { product: p._id });
+    alert("Added to favourite");
+  };
+
+  const buyNow = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate("/checkout", { state: { buyNow: p } });
+  };
 
   return (
     <Link to={`/product/${p._id}`} className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/80 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:ring-blue-200">
@@ -25,12 +41,12 @@ export default function ProductCard({ p }) {
           </span>
         )}
 
-        <button onClick={addToFavourite} className="absolute right-2 top-2 rounded-xl bg-white/90 p-1.5 text-slate-400 shadow-sm backdrop-blur transition hover:text-pink-500 md:right-3 md:top-3 md:p-2">
+        <button onClick={addToFavourite} className="absolute right-2 top-2 z-10 rounded-xl bg-white/90 p-1.5 text-slate-400 shadow-sm backdrop-blur transition hover:text-pink-500 md:right-3 md:top-3 md:p-2">
           <Heart className="h-3.5 w-3.5 md:h-4 md:w-4" />
         </button>
 
-        {/* Hover actions */}
-        <div className="absolute inset-x-0 bottom-0 flex translate-y-full flex-col gap-1.5 bg-gradient-to-t from-black/60 to-transparent p-3 transition duration-300 group-hover:translate-y-0 md:p-3">
+        {/* Action buttons — always visible on mobile, hover-reveal on desktop */}
+        <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-1.5 bg-gradient-to-t from-black/60 to-transparent p-2 transition duration-300 md:translate-y-full md:p-3 md:group-hover:translate-y-0">
           <button onClick={buyNow} className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 py-2 text-xs font-black text-white shadow transition hover:bg-blue-500">
             <Zap className="h-3 w-3" /> Buy Now
           </button>

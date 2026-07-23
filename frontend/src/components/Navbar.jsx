@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Heart, Home, MoreVertical, ShoppingBag, User, X } from "lucide-react";
+import api from "../api/api";
+import { useAuth } from "../context/AuthContext";
 
 const menuItems = [
   { name: "Home", path: "/" },
@@ -9,16 +11,27 @@ const menuItems = [
   { name: "About", path: "/about" },
 ];
 
-const bottomNav = [
-  { icon: Home, path: "/", label: "Home" },
-  { icon: Heart, path: "/favourites", label: "Wishlist" },
-  { icon: ShoppingBag, path: "/cart", label: "Cart" },
-  { icon: User, path: "/profile", label: "Profile" },
-];
-
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const [favCount, setFavCount] = useState(0);
   const location = useLocation();
+  const { user } = useAuth();
+
+  const loadCounts = () => {
+    if (!user) { setCartCount(0); setFavCount(0); return; }
+    api.get("/cart").then((r) => setCartCount(r.data.length)).catch(() => setCartCount(0));
+    api.get("/favourites").then((r) => setFavCount(r.data.length)).catch(() => setFavCount(0));
+  };
+
+  useEffect(() => { loadCounts(); }, [user, location.pathname]);
+
+  const bottomNav = [
+    { icon: Home, path: "/", label: "Home", count: 0 },
+    { icon: Heart, path: "/favourites", label: "Wishlist", count: favCount },
+    { icon: ShoppingBag, path: "/cart", label: "Cart", count: cartCount },
+    { icon: User, path: "/profile", label: "Profile", count: 0 },
+  ];
 
   return (
     <>
@@ -56,9 +69,18 @@ export default function Navbar() {
 
           {/* Desktop icons */}
           <div className="hidden items-center gap-1.5 md:flex">
-            {[{ to: "/favourites", icon: Heart, hover: "hover:bg-pink-500" }, { to: "/cart", icon: ShoppingBag, hover: "hover:bg-blue-600" }, { to: "/profile", icon: User, hover: "hover:bg-slate-800" }].map(({ to, icon: Icon, hover }) => (
-              <Link key={to} to={to} className={`rounded-xl bg-slate-100 p-2.5 text-slate-600 transition hover:text-white ${hover}`}>
+            {[
+              { to: "/favourites", icon: Heart, hover: "hover:bg-pink-500", count: favCount },
+              { to: "/cart", icon: ShoppingBag, hover: "hover:bg-blue-600", count: cartCount },
+              { to: "/profile", icon: User, hover: "hover:bg-slate-800", count: 0 },
+            ].map(({ to, icon: Icon, hover, count }) => (
+              <Link key={to} to={to} className={`relative rounded-xl bg-slate-100 p-2.5 text-slate-600 transition hover:text-white ${hover}`}>
                 <Icon className="h-4 w-4" />
+                {count > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black text-white">
+                    {count > 99 ? "99+" : count}
+                  </span>
+                )}
               </Link>
             ))}
           </div>
@@ -93,12 +115,17 @@ export default function Navbar() {
       {/* Mobile bottom navigation bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200/80 bg-white/98 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-around px-2 py-2">
-          {bottomNav.map(({ icon: Icon, path, label }) => {
+          {bottomNav.map(({ icon: Icon, path, label, count }) => {
             const active = location.pathname === path;
             return (
-              <Link key={path} to={path} className="flex flex-col items-center gap-0.5 px-3 py-1">
-                <div className={`rounded-xl p-2 transition ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-300/50" : "text-slate-400"}`}>
+              <Link key={path} to={path} className="relative flex flex-col items-center gap-0.5 px-3 py-1">
+                <div className={`relative rounded-xl p-2 transition ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-300/50" : "text-slate-400"}`}>
                   <Icon className="h-5 w-5" />
+                  {count > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black text-white">
+                      {count > 99 ? "99+" : count}
+                    </span>
+                  )}
                 </div>
                 <span className={`text-[10px] font-semibold ${active ? "text-blue-600" : "text-slate-400"}`}>{label}</span>
               </Link>
