@@ -3,7 +3,7 @@ import {
   ShoppingBag, X, User, Phone, MapPin, Package,
   CreditCard, XCircle, Search, ChevronDown, RefreshCw, Sparkles, Trash2,
 } from "lucide-react";
-import api from "../../api/api";
+import api, { imgUrl } from "../../api/api";
 
 const STATUSES = ["Order Placed","Accepted","Packed","Shipped","Out for Delivery","Delivered","Cancelled"];
 

@@ -40,7 +40,10 @@ const normalize = (body) => {
 exports.createProduct = async (req, res) => {
   try {
     const data = normalize(req.body);
-    const uploadedImages = (req.files || []).map((file) => `/uploads/${file.filename}`);
+
+    // Cloudinary storage returns the full hosted URL on file.path —
+    // use that directly instead of building a local /uploads/ path.
+    const uploadedImages = (req.files || []).map((file) => file.path);
 
     if (uploadedImages.length) {
       data.images = uploadedImages;
@@ -107,7 +110,10 @@ exports.getProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const update = normalize(req.body);
-    const uploadedImages = (req.files || []).map((file) => `/uploads/${file.filename}`);
+
+    // Cloudinary storage returns the full hosted URL on file.path —
+    // use that directly instead of building a local /uploads/ path.
+    const uploadedImages = (req.files || []).map((file) => file.path);
 
     if (uploadedImages.length) {
       update.images = uploadedImages;
